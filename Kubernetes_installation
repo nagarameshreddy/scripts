@@ -1,0 +1,106 @@
+Kubernetes install
+
+vi /etc/yum.repos.d/kubernetes.repo
+
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=0
+repo_gpgcheck=0
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+
+
+yum install -y kubelet kubeadm kubectl docker gcc
+
+systemctl enable docker && systemctl start docker && systemctl enable kubelet && systemctl start kubelet 
+
+
+vi /etc/sysctl.d/k8s.conf
+
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+
+sysctl --system
+
+
+sed -i "s/cgroup-driver=systemd/cgroup-driver=cgroupfs/g" /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+
+vi /etc/sysconfig/kubelet
+KUBELET_KUBEADM_EXTRA_ARGS=--cgroup-driver=cgroupfs
+
+systemctl daemon-reload
+systemctl restart kubelet
+
+
+kubeadm init --pod-network-cidr=192.168.0.0/16 --apiserver-advertise-address=172.31.23.57
+
+mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+ kubeadm join 172.31.15.85:6443 --token 2aqhff.x95igzikrt4zlq3u --discovery-token-ca-cert-hash sha256:9b96760cf26be154887d37665d402133dddcef64cf356b0c385ad89715330adb
+
+
+ Network:
+ https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+ kubectl apply -f \
+https://docs.projectcalico.org/v3.2/getting-started/kubernetes/installation/hosted/etcd.yaml
+
+kubectl apply -f \
+https://docs.projectcalico.org/v3.2/getting-started/kubernetes/installation/rbac.yaml
+
+ kubectl apply -f \
+https://docs.projectcalico.org/v3.2/getting-started/kubernetes/installation/hosted/calico.yaml
+
+#refer https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/
+ kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/aio/deploy/recommended/kubernetes-dashboard.yaml
+
+
+vi kube-dashboard-access.yaml
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: kubernetes-dashboard
+  labels:
+    k8s-app: kubernetes-dashboard
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: kubernetes-dashboard
+  namespace: kube-system
+
+ kubectl create -f kube-dashboard-access.yaml
+
+
+ kubectl create clusterrolebinding dashboard-admin -n default \
+  --clusterrole=cluster-admin \
+  --serviceaccount=default:dashboard
+
+
+  kubectl create serviceaccount dashboard -n default
+
+
+kubectl create clusterrolebinding dashboard-admin -n default \
+  --clusterrole=cluster-admin \
+  --serviceaccount=default:dashboard
+
+
+#kubectl get secret | grep dashboard
+output: dashboard-token-9l9bt   kubernetes.io/service-account-token   3         12m
+
+kubectl describe secret dashboard-token-9l9bt
+
+
+#kubectl proxy --address Server_IP --port=8001 --accept-hosts='^*$'
+kubectl proxy
+
+on personal system: ssh -L 8001:localhost:8001 -i "pemfile" ec2-user@Server_IP
+
+#http://Serevr_IP:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/.
+
+Get Token:  kubectl get secret $(kubectl get serviceaccount dashboard -o jsonpath="{.secrets[0].name}") -o jsonpath="{.data.token}" | base64 --decode
