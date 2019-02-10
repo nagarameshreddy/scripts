@@ -1,1 +1,1 @@
-# scripts
+# DevOPs scripts
