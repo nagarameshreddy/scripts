@@ -1,4 +1,4 @@
-Kubernetes install
+#Kubernetes install
 
 vi /etc/yum.repos.d/kubernetes.repo
 
@@ -11,6 +11,8 @@ repo_gpgcheck=0
 gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
 
 
+
+#Install Kubeadm, kubectl and Docker
 yum install -y kubelet kubeadm kubectl docker gcc
 
 systemctl enable docker && systemctl start docker && systemctl enable kubelet && systemctl start kubelet 
@@ -21,19 +23,24 @@ vi /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-ip6tables = 1
 net.bridge.bridge-nf-call-iptables = 1
 
+
+#Run following commands
 sysctl --system
 
 
 sed -i "s/cgroup-driver=systemd/cgroup-driver=cgroupfs/g" /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
 
+
 vi /etc/sysconfig/kubelet
 KUBELET_KUBEADM_EXTRA_ARGS=--cgroup-driver=cgroupfs
 
+
+#Restart Kubelet
 systemctl daemon-reload
 systemctl restart kubelet
 
-
-kubeadm init --pod-network-cidr=192.168.0.0/16 --apiserver-advertise-address=172.31.23.57
+#create cluster
+kubeadm init --pod-network-cidr=192.168.0.0/16 --apiserver-advertise-address=Server_IP
 
 mkdir -p $HOME/.kube
   sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
@@ -104,3 +111,13 @@ on personal system: ssh -L 8001:localhost:8001 -i "pemfile" ec2-user@Server_IP
 #http://Serevr_IP:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/.
 
 Get Token:  kubectl get secret $(kubectl get serviceaccount dashboard -o jsonpath="{.secrets[0].name}") -o jsonpath="{.data.token}" | base64 --decode
+
+
+
+
+kubectl create deployment nginx --image=nginx
+kubectl create service nodeport nginx --tcp=80:80
+
+kubectl create service loadbalancer nginx --tcp=80:80
+
+kubectl scale deployment/nginx --replicas=2
