@@ -66,6 +66,7 @@ https://docs.projectcalico.org/v3.2/getting-started/kubernetes/installation/host
 
 
 vi kube-dashboard-access.yaml
+
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
@@ -81,12 +82,11 @@ subjects:
   name: kubernetes-dashboard
   namespace: kube-system
 
+
+
  kubectl create -f kube-dashboard-access.yaml
 
 
- kubectl create clusterrolebinding dashboard-admin -n default \
-  --clusterrole=cluster-admin \
-  --serviceaccount=default:dashboard
 
 
   kubectl create serviceaccount dashboard -n default
