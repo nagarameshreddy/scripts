@@ -121,3 +121,10 @@ kubectl create service nodeport nginx --tcp=80:80
 kubectl create service loadbalancer nginx --tcp=80:80
 
 kubectl scale deployment/nginx --replicas=2
+
+
+
+gcloud:
+gcloud components install kubectl
+gcloud container clusters create kubia --num-nodes 3 --machine-type f1-micro
+
