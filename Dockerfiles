@@ -1,7 +1,8 @@
-FROM python:3.7.3-alpine
-LABEL maintainer="nagaramesh@outlook.com"
-#ENV SENDGRID_API_KEY=
 
+
+
+FROM python:3.7.3-alpine
+ENV SERVER_ALLOWED_HOSTS='*' SERVER_DEBUG='True'
 RUN apk add --no-cache curl make gcc libc-dev linux-headers musl-dev tk-dev tcl-dev openssl-dev libffi-dev mysql-client mariadb-dev python3-dev jpeg-dev zlib-dev freetype-dev lcms2-dev tiff-dev openjpeg-dev
 RUN mkdir /app
 WORKDIR /app
@@ -10,7 +11,24 @@ RUN pip install --upgrade pip
 RUN pip install -U setuptools
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
-#python manage.py collectstatic --no-input &&
-RUN  python /app/manage.py makemigrations Student && python /app/manage.py makemigrations student_onboard  && python /app/manage.py migrate
+RUN  python manage.py collectstatic --no-input &&  python /app/manage.py makemigrations app1 app2 && python /app/manage.py migrate && python /app/manage.py loaddata test
 EXPOSE 80
-CMD ["python", "/app/manage.py", "runserver", "0.0.0.0:80"]
+ENTRYPOINT ["python", "/app/manage.py", "runserver", "0.0.0.0:80"]
+
+
+
+
+
+FROM python:3.7.3-alpine
+ENV SERVER_ALLOWED_HOSTS='*' SERVER_DEBUG='True'
+RUN apk add --no-cache curl make gcc libc-dev linux-headers musl-dev tk-dev tcl-dev openssl-dev libffi-dev mysql-client mariadb-dev python3-dev jpeg-dev zlib-dev freetype-dev lcms2-dev tiff-dev openjpeg-dev
+RUN mkdir /app
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --upgrade pip
+RUN pip install -U setuptools
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+RUN  python /app/manage.py makemigrations app1 && python /app/manage.py migrate
+EXPOSE 80
+ENTRYPOINT ["python", "/app/manage.py", "runserver", "0.0.0.0:80"]
